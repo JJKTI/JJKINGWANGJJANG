@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>지뢰찾기 게임</title>
+  <style>
+    .board {
+      display: inline-block;
+      border-collapse: collapse;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      font-weight: bold;
+      background-color: #ddd; /* 회색 배경 */
+    }
+    #scoreBoard {
+      margin-top: 10px;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>지뢰찾기 게임</h2>
+
+<table class="board" id="board"></table>
+<div id="scoreBoard">Score: 0</div>
+
+<script>
+  const boardSize = 8; // 보드 크기
+  const numMines = 10; // 지뢰 개수
+  let score = 0; // 점수
+
+  let board = [];
+
+  // 보드 초기화
+  function initBoard() {
+    board = Array.from({ length: boardSize }, () => Array(boardSize).fill(0));
+
+    // 지뢰 배치
+    let placedMines = 0;
+    while (placedMines < numMines) {
+      const x = Math.floor(Math.random() * boardSize);
+      const y = Math.floor(Math.random() * boardSize);
+      if (board[x][y] !== 'M') {
+        board[x][y] = 'M';
+        placedMines++;
+      }
+    }
+
+    // 보드 그리기
+    const boardElement = document.getElementById('board');
+    for (let i = 0; i < boardSize; i++) {
+      const row = document.createElement('tr');
+      for (let j = 0; j < boardSize; j++) {
+        const cell = document.createElement('td');
+        cell.classList.add('cell');
+        cell.dataset.row = i;
+        cell.dataset.col = j;
+        cell.textContent = '';
+        cell.addEventListener('click', handleCellClick);
+        row.appendChild(cell);
+      }
+      boardElement.appendChild(row);
+    }
+  }
+
+  function handleCellClick(event) {
+    const row = parseInt(event.target.dataset.row);
+    const col = parseInt(event.target.dataset.col);
+
+    if (board[row][col] === 'M') {
+      event.target.innerHTML = '<span style="font-size: 20px;">💣</span>'; // 지뢰 이모티콘 표시
+      const playAgain = confirm('게임 오버! 다시 플레이하시겠습니까?');
+      if (playAgain) {
+        resetBoard(); // 보드 초기화
+      } else {
+        closeGame(); // 게임 종료
+      }
+    } else {
+      event.target.style.backgroundColor = '#fff'; // 회색 칸 제거
+
+      // 점수 증가 및 표시
+      score += 100;
+      document.getElementById('scoreBoard').textContent = `Score: ${score}`;
+
+      const minesCount = countAdjacentMines(row, col); // 주변 지뢰 개수 계산
+      if (minesCount > 0) {
+        event.target.textContent = minesCount; // 주변 지뢰 개수 표시
+      } else {
+        // 주변에 지뢰가 없는 경우 추가 작업 수행
+        removeEmptyCells(row, col);
+      }
+    }
+  }
+
+  // 인접한 셀 중 지뢰의 개수를 세는 함수
+  function countAdjacentMines(row, col) {
+    let count = 0;
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1], [0, 1],
+      [1, -1], [1, 0], [1, 1]
+    ];
+
+    for (const [dx, dy] of directions) {
+      const newRow = row + dx;
+      const newCol = col + dy;
+
+      if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize) {
+        if (board[newRow][newCol] === 'M') {
+          count++;
+        }
+      }
+    }
+
+    return count;
+  }
+
+  // 주변에 지뢰가 없는 경우 주변의 회색 칸들을 벗겨내는 함수
+  function removeEmptyCells(row, col) {
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1], [0, 1],
+      [1, -1], [1, 0], [1, 1]
+    ];
+
+    for (const [dx, dy] of directions) {
+        const newRow = row + dx;
+      const newCol = col + dy;
+
+      if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize) {
+        const cell = document.querySelector(`[data-row="${newRow}"][data-col="${newCol}"]`);
+        if (cell && cell.style.backgroundColor === 'rgb(221, 221, 221)') {
+          cell.click();
+        }
+      }
+    }
+  }
+
+  // 보드 재설정 (게임 다시 시작)
+  function resetBoard() {
+    const boardElement = document.getElementById('board');
+    boardElement.innerHTML = ''; // 보드 초기화
+
+    // 점수 초기화
+    score = 0;
+    document.getElementById('scoreBoard').textContent = `Score: ${score}`;
+
+    initBoard(); // 보드 재설정
+  }
+
+  // 게임 종료
+  function closeGame() {
+    window.close(); // 창 닫기
+  }
+
+  // 게임 시작
+  initBoard();
+</script>
+
+</body>
+</html>
